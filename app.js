@@ -5,62 +5,69 @@ const getElementById = id => {
 }
 
 function issueHandler(e) {
-    const issue = getElementById('issue').value
+    const issueName = getElementById('issue').value
     const severity = getElementById('severity').value
     const assignedTo = getElementById('assignedTo').value
     const id = Math.ceil(Math.random() * 100000000)
     const status = 'open'
-    const newIssue = { id, issue, severity, assignedTo, status }
-
-    addToLocal(newIssue)
+    const issue = { id, issueName, severity, assignedTo, status }
+    addToLocal(issue)
     document.getElementById('issueForm').reset()
     e.preventDefault()
 }
 
-const addToLocal = newIssue => {
-    let issuesArr = getLocalData()
-    issuesArr.push(newIssue)
-    localStorage.setItem('issues', JSON.stringify(issuesArr))
-    fetchData()
+const addToLocal = issue => {
+    const bugs = getLocalData()
+    bugs.push(issue)
+    localStorage.setItem('bugs', JSON.stringify(bugs))
+    fetchLocal()
 }
 
 const getLocalData = () => {
-    let issueArr
-    const issues = localStorage.getItem('issues')
-    if (issues) {
-        issueArr = JSON.parse(issues)
+    let issues
+    const bugs = JSON.parse(localStorage.getItem('bugs'))
+    if (bugs) {
+        issues = bugs
     } else {
-        issueArr = []
+        issues = []
     }
-    return issueArr
+    return issues
 }
 
-const fetchData = () => {
-    const issues = getLocalData()
-    const parent = getElementById('issueList')
+const fetchLocal = () => {
+    const parent = getElementById('issue-container')
     parent.textContent = ''
-    issues.forEach(issue => {
+    const issues = getLocalData()
+    issues.forEach(bug => {
+        const { id, issueName, severity, assignedTo, status } = bug
         const div = document.createElement('div')
+        div.classList.add('mt-3', 'p-5')
+        div.setAttribute('style', 'background-color: #eee')
         div.innerHTML = `
-            <div class="mt-4 p-5" style="background-color: #eee">
-                <p><b>Issue No:</b> ${issue.id}</p>
-                <h3>Issue: ${issue.issue}</h3>
-                <p><b>Severity:</b> ${issue.severity}</p>
-                <p><b>Assigned To:</b> ${issue.assignedTo}</p>
-                <button onclick="closeBtn(event)" class="btn btn-secondary">Close</button><button onclick="deleteBtn('${issue.id}')" class="btn btn-danger ms-3">Delete</button>
-            </div>
+            <span class="border rounded bg-success text-white ps-2 pe-2 pb-1"><small>${status}</small></span>
+            <p><i class="fa-solid fa-hashtag fs-6 mt-3"></i><b>Issue No:</b> ${id}</p>
+            <h3><i class="fa-solid fa-triangle-exclamation fs-4 text-warning"></i> Issue: ${issueName}</h3>
+            <p class="mt-3"><i class="fa-solid fa-gauge-simple-high fs-5 text-danger"></i><b class="ms-2">Severity: </b> ${severity}</p>
+            <p><i class="fa-solid fa-user fs-5 text-secondary"></i><b class="ms-2">Assigned To: </b> ${assignedTo}</p>
+            <button onclick="closeBtn('${id}',event)" class="btn btn-secondary">Close</button><button onclick="deleteBtn('${id}')" class="btn btn-danger ms-3">Delete</button>
         `
         parent.appendChild(div)
     })
 }
 
-const closeBtn = event => {
-    event.target.parentNode.childNodes[3].style.textDecoration = 'line-through'
+const closeBtn = id => {
+    const bugs = getLocalData()
+    const bug = bugs.find(bug => bug.id === parseInt(id))
+    bug.status = 'closed'
+    bug.issueName = `<s>${bug.issueName}</s>`
+    event.target.disabled = true
+    localStorage.setItem('bugs', JSON.stringify(bugs))
+    fetchLocal()
 }
 
 const deleteBtn = id => {
-    const issues = getLocalData()
-    const remained = issues.filter(issue => issue.id !== parseInt(id))
-    localStorage.setItem('issues', JSON.stringify(remained))
-    fetchData()
+    const bugs = getLocalData()
+    const remained = bugs.filter(bug => bug.id !== parseInt(id))
+    localStorage.setItem('bugs', JSON.stringify(remained))
+    fetchLocal()
 }
